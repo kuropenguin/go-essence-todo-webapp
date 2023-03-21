@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  web:
+    build:
+      context: ./go
+    ports:
+      - "8989:8989"
+    volumes:
+      - ./go:/app
+    
