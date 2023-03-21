@@ -20,10 +20,10 @@ import (
 
 type Todo struct {
 	bun.BaseModel `bun:"table:todos,alias:t"`
-	ID            int64     `bun:"id,pk,autoincrement"`
-	Content       string    `bun:"content,notnull"`
-	Done          bool      `bun:"done"`
-	Until         time.Time `bun:"until,nullzero"`
+	ID            int64     `bun:"id,pk,autoincrement" form:"id"`
+	Content       string    `bun:"content,notnull" form:"content"`
+	Done          bool      `bun:"done" form:"done"`
+	Until         time.Time `bun:"until,nullzero" form:"untile"`
 	CreatedAt     time.Time
 	UpdateAt      time.Time `bun:",nullzero"`
 	DeletedAt     time.Time `bun:",soft_delete,nullzero"`
@@ -117,4 +117,18 @@ func main() {
 		return c.Redirect(http.StatusFound, "/")
 	})
 	e.Logger.Fatal(e.Start(":8989"))
+}
+
+func customFunc(todo *Todo) func([]string) []error {
+	return func(values []string) []error {
+		if len(values) == 0 || values[0] == "" {
+			return nil
+		}
+		dt, err := time.Parse("2006-01-02T15:04 MST", values[0]+" JST")
+		if err != nil {
+			return []error{echo.NewBindingError("until", values[0:1], "failed to decode time", err)}
+		}
+		todo.Until = dt
+		return nil
+	}
 }
