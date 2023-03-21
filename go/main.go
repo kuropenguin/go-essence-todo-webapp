@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -22,6 +23,7 @@ import (
 )
 
 var templates embed.FS
+var static embed.FS
 
 type Todo struct {
 	bun.BaseModel `bun:"table:todos,alias:t"`
@@ -129,6 +131,13 @@ func main() {
 		}
 		return c.Redirect(http.StatusFound, "/")
 	})
+
+	staticFs, err := fs.Sub(static, "static")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fileServer := http.FileServer(http.FileSystem(http.FS(staticFs)))
+	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", fileServer)))
 	e.Logger.Fatal(e.Start(":8989"))
 }
 
