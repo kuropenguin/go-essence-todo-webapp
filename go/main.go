@@ -1,12 +1,20 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
+
+	_ "github.com/lib/pq"
 
 	"github.com/labstack/echo"
 	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/extra/bundebug"
 )
 
 type Todo struct {
@@ -21,7 +29,26 @@ type Todo struct {
 }
 
 func main() {
-	fmt.Println("Hello World")
+	sqldb, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	fmt.Println(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer sqldb.Close()
+
+	db := bun.NewDB(sqldb, pgdialect.New())
+	defer db.Close()
+
+	db.AddQueryHook(bundebug.NewQueryHook(
+		bundebug.FromEnv("BUNDBUG"),
+	))
+
+	ctx := context.Background()
+	_, err = db.NewCreateTable().Model((*Todo)(nil)).IfNotExists().Exec(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
