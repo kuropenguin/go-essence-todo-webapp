@@ -9,6 +9,8 @@ services:
       - ./go:/app
     depends_on:
       - postgres
+    environment:
+      DATABASE_URL: "user=pg password=pg dbname=mydatabase host=postgres sslmode=disable"
   postgres:
     image: postgres:13
     container_name: my_postgres
